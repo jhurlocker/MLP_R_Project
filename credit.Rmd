@@ -1,0 +1,239 @@
+---
+title: An R Markdown document converted from "./credit.ipynb"
+output: html_document
+---
+
+```{r}
+
+```
+
+```{r}
+#Installing libraries
+install.packages("haven", dependencies = TRUE)
+install.packages("dplyr", dependencies = TRUE)
+install.packages("ggplot2", dependencies = TRUE)
+install.packages("forcats", dependencies = TRUE)
+install.packages("gridExtra", dependencies = TRUE)
+install.packages("tidyverse", dependencies = TRUE)
+```
+
+```{r}
+```
+
+```{r}
+install.packages("devtools")
+devtools::install_github("daattali/ggExtra")
+```
+
+```{r}
+install.packages("ggExtra")
+```
+
+```{r}
+#Loading libraries
+library(haven)
+library(dplyr)
+library(ggplot2)
+library(forcats)
+library(gridExtra)
+install.packages("readr")
+#library(tidyverse)
+library(readr)
+```
+
+```{r}
+readr.show_col_types = FALSE
+credit_risk_dataset <- read_csv("https://raw.githubusercontent.com/jhurlocker/CreditDataset/main/credit_risk_dataset.csv")
+View(credit_risk_dataset)
+```
+
+```{r}
+#Transforming variables to factors
+credit_risk_dataset$loan_status <- as.factor(credit_risk_dataset$loan_status)
+credit_risk_dataset$person_home_ownership <- as.factor(credit_risk_dataset$person_home_ownership)
+credit_risk_dataset$loan_intent <- as.factor(credit_risk_dataset$loan_intent)
+credit_risk_dataset$loan_grade <- as.factor(credit_risk_dataset$loan_grade)
+credit_risk_dataset$cb_person_default_on_file <- as.factor(credit_risk_dataset$cb_person_default_on_file)
+
+#View(credit_risk_dataset)
+glimpse(credit_risk_dataset) # more ordered
+#str(credit_risk_dataset)
+```
+
+```{r}
+# To spot missing values
+summary(credit_risk_dataset)
+
+#sum(is.na(credit_risk_dataset))/(nrow(credit_risk_dataset)*ncol(credit_risk_dataset)) # 1.0259% of NAs
+```
+
+```{r}
+plot(credit_risk_dataset$person_age, credit_risk_dataset$person_emp_length)
+```
+
+```{r}
+credit_risk <- credit_risk_dataset %>%
+    filter(!is.na(person_emp_length)) %>%
+    filter(!is.na(loan_int_rate)) %>%
+    filter(person_age < 90) %>%
+    filter(person_emp_length < 100)
+
+summary(credit_risk)
+```
+
+```{r}
+plot1 <- ggplot(credit_risk, aes(person_age, person_income, col=person_home_ownership)) +
+  geom_point() + ylab("Income") + xlab("Age") + labs(color = "Home ownership: ") +
+  theme(legend.position="bottom") 
+ggExtra::ggMarginal(plot1, type = "boxplot")
+```
+
+```{r}
+plot2 <- ggplot(credit_risk, aes(loan_amnt, loan_int_rate, col=loan_intent)) +
+  geom_point() + ylab("Interest rate") + xlab("Loan Amount") + labs(color = "Loan Intent: ") +
+  theme(legend.position="bottom") 
+ggExtra::ggMarginal(plot2, type = "boxplot")
+```
+
+```{r}
+plot3 <- ggplot(credit_risk, aes(loan_amnt, person_income, col=loan_grade)) +
+  geom_point() + ylab("Income") + labs(color = "Loan Grade: ") + theme(legend.position="bottom") +
+  scale_color_manual(values=c("#66cc99", "#70F000", "#D0FF00", "#F3FF0F", "#FFDB4D", "#FFA64D", "#FF4D4D"))
+ggExtra::ggMarginal(plot3, type = "boxplot")
+```
+
+```{r}
+plot4 <- ggplot(credit_risk, aes(person_age, loan_int_rate, col=loan_grade)) +
+  geom_point() + ylab("Interest rate") + xlab("Age") +  labs(color = "Loan Grade: ") +
+theme(legend.position="bottom") + scale_color_manual(values=c("#66cc99", "#70F000", "#D0FF00", "#F3FF0F", "#FFDB4D", "#FFA64D", "#FF4D4D"))
+ggExtra::ggMarginal(plot4, type = "boxplot")
+```
+
+```{r}
+plot5 <- ggplot(credit_risk, aes(loan_percent_income, loan_int_rate, col= factor(loan_status, labels = c("Not default", "Default")))) +
+  geom_point() + ylab("Interest rate") + xlab("Loan percent income") + labs(color = "Loan Status: ") + 
+  theme(legend.position="bottom") + scale_color_manual(values=c("#66cc99", "#ff3366"))
+ggExtra::ggMarginal(plot5, type = "boxplot")
+```
+
+```{r}
+ggplot(credit_risk, aes(x = factor(loan_status), fill = factor(person_home_ownership))) +
+  geom_bar(position = "fill") +
+  ylab("Home ownership %") + xlab("Default") + labs(fill = "Type of ownership:") +
+  theme(legend.position="top", plot.background = element_rect(colour = "black", size = 1)) + 
+  guides(fill = guide_legend(reverse=TRUE)) +
+  coord_flip()
+```
+
+```{r}
+ggplot(credit_risk, aes(x = factor(loan_status), fill = factor(loan_intent))) +
+  geom_bar(position = "fill") +
+  ylab("Loan Intent") + xlab("Credit Default") + labs(fill = "Loan intent:") +
+  theme(legend.position="top", plot.background = element_rect(colour = "black", size = 1)) + 
+  guides(fill = guide_legend(reverse=TRUE)) +
+  coord_flip()
+```
+
+```{r}
+ggplot(credit_risk, aes(x = factor(loan_status), fill = factor(loan_grade))) +
+  geom_bar(position = "fill") + scale_fill_manual(values=c("#66cc99", "#70F000", "#D0FF00", "#F3FF0F", "#FFDB4D", "#FFA64D", "#FF4D4D")) +
+  ylab("Loan Grade") + xlab("Credit Default") + labs(fill = "Loan grade:") +
+  theme(legend.position="top", plot.background = element_rect(colour = "black", size = 1)) + 
+  guides(fill = guide_legend(reverse=TRUE)) +
+  coord_flip()
+```
+
+```{r}
+g1 <- ggplot(credit_risk, aes(x = factor(loan_status), y = loan_int_rate)) + 
+  geom_boxplot(fill = "orange", alpha = 0.2) +
+  ylab("Interest rate") + xlab("Credit Default") +
+  coord_flip() 
+
+g2 <- ggplot(credit_risk, aes(x = factor(loan_status), y = person_income)) + 
+  geom_boxplot(fill = "orange", alpha = 0.2) +
+  ylab("Income") + xlab("Credit Default") +
+  coord_flip() 
+
+g3 <- ggplot(credit_risk, aes(x = factor(loan_status), y = loan_amnt)) + 
+  geom_boxplot(fill = "orange", alpha = 0.2) +
+  ylab("Loan Amount") + xlab("Credit Default") +
+  coord_flip() 
+
+
+grid.arrange(g1, g2, g3, ncol = 1, nrow = 3, top = "Default vs Interest rate, Income and Loan amount")
+```
+
+```{r}
+install.packages('ISLR')
+```
+
+```{r}
+library(ISLR)
+
+logit <- glm(loan_status ~ ., data = credit_risk, family = binomial(link = 'logit'))
+summary(logit)
+```
+
+```{r}
+logit <- glm(loan_status ~ person_age + person_income + person_emp_length +
+            loan_amnt + loan_int_rate + person_home_ownership + loan_intent +
+            loan_grade, data = credit_risk, family = binomial)
+summary(logit)
+```
+
+```{r}
+credit_risk <- credit_risk %>%
+  filter(person_income < 800000)
+
+logit <- glm(loan_status ~ person_age + person_income + person_emp_length +
+            loan_amnt + loan_int_rate + person_home_ownership + loan_intent +
+            loan_grade, data = credit_risk, family = binomial)
+summary(logit)
+```
+
+```{r}
+anova(logit, test="Chisq")
+```
+
+```{r}
+cbind(Estimate=round(coef(logit),5),
+ OR=round(exp(coef(logit)),5))
+```
+
+```{r}
+predicted <- predict(logit, type = "response")
+table(credit_risk$loan_status, predicted > 0.5)
+table(credit_risk$loan_status, predicted > 0.5) %>% prop.table()
+```
+
+```{r}
+install.packages('ROCR')
+```
+
+```{r}
+library(ROCR)
+
+prediction(predicted, credit_risk$loan_status) %>%
+  performance(measure = "tpr", x.measure = "fpr") %>%
+  plot()
+
+prediction(predicted, credit_risk$loan_status) %>%
+  performance(measure = "auc") %>%
+  .@y.values
+```
+
+```{r}
+predicted.data <- data.frame(
+  probability.of.df=logit$fitted.values,
+  default=credit_risk$loan_status)
+
+predicted.data <- predicted.data[
+  order(predicted.data$probability.of.df, decreasing=FALSE),]
+predicted.data$rank <- 1:nrow(predicted.data)
+
+ggplot(data=predicted.data, aes(x=rank, y=probability.of.df)) +
+  geom_point(aes(color=default), alpha=1, shape=4, stroke=2) +
+  xlab("Index") + scale_color_manual(values=c("#66cc99", "#ff3366")) +
+  ylab("Predicted probability of default")
+```
+
